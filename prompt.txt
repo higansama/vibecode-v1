@@ -1,0 +1,10 @@
+Buatkan issue.md berisi planning membuat:
+
+Buat project baru di folder ini
+
+Menggunakan Bun
+
+Gunakan stack:
+- ElysiaJS
+- Drizzle
+- MySQL
