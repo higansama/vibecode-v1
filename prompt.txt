@@ -1,111 +1,63 @@
-buatkan issue.md yang berisi untuk perencanaan untuk bisa di eksekusi oleh junior programmer atau user AI Agent yang lebih murah
+buatkan issue_5.md
+
+buatkan saya planning yang lengkap dan mudah di eksekusi oleh junior programmer atau model yang lebih bodoh dari kamu.
+
+saya ingin membuat sebuah fitur menurut domain yang saya tentukan:
+
+Domain User:
+- Tambahkan atribut role ke database
+    - role varchar(32) not null default=basic
+    - status varchar(32) null
+    - Buat perubahan di database ketika role nya "" maka ganti jadi "basic"
+
+Domain Product:
+- Buat table baru di db dengan spesifikasi dibawah
+    - Nama table: products_table
+        id int auto_increment primary_key
+        sku varchar(32) not null
+        nama_produk varchar(64) not null
+        created_at timestamp
+    - Nama table: variant_product_stocks_table
+        id int auto_increment primary_key
+        id_product int 
+        sku_variant varchar(32) not null
+        stock_product uint
+        price uint
+        created_at timestamp
+
+- Buat seed untuk products_table dan variant_product_stocks_table yang saling berhubungan
+- Tidak perlu membuat sebuah query untuk melakukan relasi antar table secara implisit
+- Buat CRUD untuk masing masing table dalam bentuk RESTFUL API dengan body payload yang sesuai dengan isi dari table diatas.
+- Standarisasi dari reseponse disesuaikan dengan response domain user
 
 
-isi planning:
+Domain Order
+- Buat Domain order terbaru
+- Buat sebuah table baru di db dengan nama orders_table, dengan spesifikasi dibawah:
+    - Nama table orders_table
+        id int auto_increment pk
+        id_user int not null
+        nominal int not null
+        discount int not null
+        grand_total int not null
+        payment_status string not null // pilihannya ['waiting', 'success', 'expired']
+        payment_expired_at time // diisi sampai 1 jam setelah pesanan dibuat        
+        created_at timestamp
 
-buat table users:
-id int pk
-name varchar(255) not null
-email varchar(255) not null
-password varchar(255) not null // password merupakan hash dari bcrypt
-created_at timestamp default current_timestamp
+    - Nama table order_details_table
+        id int auto_increment pk
+        id_variant_product_stocks_table int not null
+        buy_price int not null
+        qty int not null
+        total_price int not null
+        created_at timestamp
 
-
-
-buatkan API untuk registrasi userbaru dengan endpoint POST /api/v1/auth/register
-buat sebuah logik uniqueness di email dan password harus di encrypt menggunakan bcrypt
-
-    request body:
-    {
-        "name": "John Doe",
-        "email": "[EMAIL_ADDRESS]",
-        "password": "password"
-    }
-
-    response success:
-    {
-        "success": true,
-        "message": "User created successfully",
-        "data": {
-            "id": 1,
-            "name": "John Doe",
-            "email": "[EMAIL_ADDRESS]",
-            "created_at": "2022-01-01T00:00:00.000Z"
-        }
-    }
-
-    response failed:
-    {
-        "success": false,
-        "message": "User already exists",
-        "detail": "[technical error jika ada]"
-    }
-
-
-buatkan API untuk login user dengan endpoint POST /api/v1/auth/login
-    request body:
-    {
-        "email": "[EMAIL_ADDRESS]",
-        "password": "password"
-    }
-
-    response success:
-    {
-        "success": true,
-        "message": "User logged in successfully",
-        "data": {
-            "token": "[token]",
-            "user": {
-                "id": 1,
-                "name": "John Doe",
-                "email": "[EMAIL_ADDRESS]",
-                "created_at": "2022-01-01T00:00:00.000Z"
-            }
-        }
-    }
-
-    response failed:
-    {
-        "success": false,
-        "message": "Wrong password",
-        "detail": "[technical error jika ada]"
-    }
+- Buat sebuah RESTFUL API untuk domain order
+- Ketentuannya
+    1. Order hanya bisa dilakukan oleh user basic dengan status != ["forbidden", "in-active"]
+    2. Order harus bisa tahan dari race condition dengan menggunakan rabbitMQ dan db transactions
+    3. Order harus bisa menangani 100 user dalam waktu yang bersamaan
+    4. Cara mengisi table orders diserahkan pada kamu agar fitur ini sesuai kebutuhan
 
 
 
-struktur folder di dalam src
-gunakan pendekatan Domain Driven Design (DDD) modular:
-src/
-│
-├── api/              # Endpoint routes (v1/auth)
-│   └── v1/
-│       └── auth/
-│           ├── register.ts
-│           └── login.ts
-│
-├── application/      # Business logic & domain services
-│   └── auth/
-│       ├── register.service.ts
-│       └── login.service.ts
-│
-├── domain/           # Business entities & value objects
-│   └── user/
-│       ├── user.entity.ts
-│       └── user.error.ts
-│
-├── infrastructure/   # Infrastructure concerns
-│   ├── db/           # Drizzle schema, migrations, connection
-│   ├── jwt/          # JWT utilities
-│   └── bcrypt/       # Password hashing utilities
-│
-└── main.ts           # Application entry point & setup
-
-
-tetapkan prinsip clean architechture
-readebility is king
-maintainability is queen
-scalability is god
-gunakan repository pattern
-
-jelaskan tahapan-tahapan yang harus dilakukan untuk mengimplementasikan kebutuhan diatas untuk junior programmer atau user AI Agent yang lebih murah.
-buat se detail mungkin anggap saja yang mengerjakannya lebih bodoh dari kamu tapi kamu bisa atur mereka agar bisa bekerja lebih cepat.

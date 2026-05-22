@@ -13,6 +13,14 @@ export class UserRepository implements IUserRepository {
     return result[0] as User;
   }
 
+  async findById(id: number): Promise<User | null> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (result.length === 0) {
+      return null;
+    }
+    return result[0] as User;
+  }
+
   async create(data: CreateUserDTO): Promise<User> {
     const [result] = await db.insert(users).values({
       name: data.name,
