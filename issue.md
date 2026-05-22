@@ -1,36 +1,203 @@
-# Setup Project: ElysiaJS + Drizzle + MySQL dengan Bun
+# Implementasi Fitur Autentikasi (Register & Login) dengan Clean Architecture (DDD)
 
-## Ringkasan
-Tugas ini mencakup setup awal untuk project backend baru yang menggunakan Bun sebagai runtime dan package manager. Teknologi yang digunakan adalah ElysiaJS untuk framework web, Drizzle ORM untuk interaksi dengan database, dan MySQL sebagai database.
+## Ringkasan Tugas
+Anda ditugaskan untuk mengimplementasikan fitur autentikasi yang mencakup registrasi pengguna baru dan login. Sistem ini harus dibangun di atas *framework* ElysiaJS dengan Drizzle ORM dan MySQL, dan **wajib** menggunakan pendekatan **Clean Architecture** dan **Domain Driven Design (DDD)** yang modular.
 
-## Persyaratan & Stack Teknologi
-- **Runtime & Package Manager**: Bun
-- **Framework**: ElysiaJS
-- **ORM**: Drizzle ORM
-- **Database**: MySQL
+**Prinsip Utama:**
+- *Readability is King* (Kode harus mudah dibaca)
+- *Maintainability is Queen* (Kode harus mudah dipelihara)
+- *Scalability is God* (Arsitektur harus bisa diskalakan)
+- Wajib menggunakan **Repository Pattern** untuk memisahkan logika akses *database* dari logika bisnis.
 
-## Tugas High-Level
+---
 
-### 1. Inisialisasi Project
-- Inisialisasi project Bun baru di direktori utama.
-- Install dan konfigurasi aplikasi dasar menggunakan ElysiaJS.
-- Pastikan server dapat berjalan dan dapat merespons endpoint *health check* dasar (contoh: `GET /`).
+## 1. Skema Database
+Buat atau perbarui tabel `users` pada Drizzle schema dengan spesifikasi berikut:
+- `id`: Integer, Primary Key, Auto Increment
+- `name`: Varchar(255), Not Null
+- `email`: Varchar(255), Not Null, Unique
+- `password`: Varchar(255), Not Null *(menyimpan hash dari bcrypt)*
+- `created_at`: Timestamp, Default Current Timestamp
 
-### 2. Setup Database & ORM
-- Install Drizzle ORM, Drizzle Kit, dan driver MySQL yang diperlukan.
-- Siapkan file konfigurasi Drizzle (contoh: `drizzle.config.ts`), gunakan *environment variables* (variabel lingkungan) untuk *connection string* database.
-- Buat file skema database awal yang mendefinisikan setidaknya satu tabel contoh (contoh: tabel `users`).
-- Konfigurasikan skrip npm/bun di dalam `package.json` untuk menangani migrasi database (generate dan push) menggunakan Drizzle Kit.
+---
 
-### 3. Struktur Aplikasi & Integrasi
-- Atur kode ke dalam struktur yang rapi dan modular (contoh: pisahkan direktori untuk route, skema database, dan controller/service).
-- Integrasikan instance database Drizzle dengan aplikasi Elysia sehingga *route handler* dapat melakukan query ke database.
+## 2. Spesifikasi API
 
-### 4. Konfigurasi Environment
-- Buat file `.env.example` yang mencantumkan variabel lingkungan yang dibutuhkan (seperti `DATABASE_URL`).
+### A. Registrasi User Baru
+**Endpoint:** `POST /api/v1/auth/register`
 
-## Kriteria Penerimaan (Acceptance Criteria)
-- Menjalankan perintah development (contoh: `bun run dev`) dapat menjalankan server Elysia dengan sukses tanpa error.
-- Migrasi Drizzle dapat di-generate dan diaplikasikan dengan baik ke database MySQL.
-- Terdapat minimal satu route yang berfungsi untuk membaca atau menulis data ke database MySQL melalui Drizzle.
-- Struktur project sudah rapi dan siap digunakan untuk pengembangan fitur selanjutnya.
+**Request Body:**
+```json
+{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123"
+}
+```
+
+**Response Success (200/201):**
+```json
+{
+    "success": true,
+    "message": "User created successfully",
+    "data": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com",
+        "created_at": "2022-01-01T00:00:00.000Z"
+    }
+}
+```
+
+**Response Failed:**
+```json
+{
+    "success": false,
+    "message": "User already exists",
+    "detail": "[technical error jika ada]"
+}
+```
+
+### B. Login User
+**Endpoint:** `POST /api/v1/auth/login`
+
+**Request Body:**
+```json
+{
+    "email": "john@example.com",
+    "password": "password123"
+}
+```
+
+**Response Success (200):**
+```json
+{
+    "success": true,
+    "message": "User logged in successfully",
+    "data": {
+        "token": "[token_jwt]",
+        "user": {
+            "id": 1,
+            "name": "John Doe",
+            "email": "john@example.com",
+            "created_at": "2022-01-01T00:00:00.000Z"
+        }
+    }
+}
+```
+
+**Response Failed:**
+```json
+{
+    "success": false,
+    "message": "Wrong password",
+    "detail": "[technical error jika ada]"
+}
+```
+
+---
+
+## 3. Struktur Folder (Wajib Diikuti)
+Gunakan struktur modular berbasis DDD di dalam direktori `src/`:
+
+```text
+src/
+│
+├── api/              # Endpoint routes
+│   └── v1/
+│       └── auth/
+│           ├── register.ts
+│           └── login.ts
+│
+├── application/      # Business logic & domain services (Use Cases)
+│   └── auth/
+│       ├── register.service.ts
+│       └── login.service.ts
+│
+├── domain/           # Business entities, interfaces, & value objects
+│   └── user/
+│       ├── user.entity.ts
+│       ├── user.repository.interface.ts
+│       └── user.error.ts
+│
+├── infrastructure/   # Infrastructure concerns (DB, JWT, Bcrypt)
+│   ├── db/           # Drizzle schema, migrations, connection
+│   │   ├── schema.ts
+│   │   ├── index.ts
+│   │   └── user.repository.ts
+│   ├── jwt/          # JWT utilities
+│   │   └── index.ts
+│   └── bcrypt/       # Password hashing utilities
+│       └── index.ts
+│
+└── main.ts           # Application entry point & setup (sebelumnya index.ts)
+```
+
+---
+
+## 4. Panduan Eksekusi Langkah-demi-Langkah (Step-by-Step)
+Kerjakan secara berurutan sesuai tahap di bawah ini. Jangan melompat!
+
+### Tahap 1: Persiapan & Instalasi Dependensi
+1. Masuk ke direktori `backend-elysia/`.
+2. Ubah nama file `src/index.ts` menjadi `src/main.ts`. Jangan lupa *update* skrip `dev` di `package.json` agar mengarah ke `src/main.ts`.
+3. Tambahkan pustaka yang dibutuhkan dengan menjalankan perintah:
+   `bun add bcryptjs jsonwebtoken`
+4. Tambahkan *types* untuk TypeScript:
+   `bun add -D @types/bcryptjs @types/jsonwebtoken`
+
+### Tahap 2: Infrastruktur Database & Schema
+1. Pindahkan struktur database yang sudah ada agar sesuai dengan arsitektur (yaitu ke `src/infrastructure/db/`). Pastikan *path* di `drizzle.config.ts` juga di-*update*.
+2. Buka `schema.ts`. Perbarui definisi tabel `users` agar persis sesuai Poin 1 (tambahkan kolom `password`).
+3. Jalankan perintah `bun run db:push` untuk menyinkronkan skema ini ke MySQL.
+
+### Tahap 3: Membangun Layer Domain (Core Business)
+*Layer ini sangat suci dan tidak boleh bergantung pada pustaka eksternal seperti Drizzle atau framework Elysia.*
+1. **Buat `src/domain/user/user.entity.ts`:**
+   - Buat tipe/interface murni (tanpa Drizzle) untuk mendeskripsikan model `User`.
+   - Buat interface `CreateUserDTO` untuk payload data pembuatan *user* baru.
+2. **Buat `src/domain/user/user.error.ts`:**
+   - Buat kelas *error* kustom seperti `UserAlreadyExistsError` dan `InvalidCredentialsError`.
+3. **Buat `src/domain/user/user.repository.interface.ts`:**
+   - Buat `interface IUserRepository` yang mendefinisikan metode:
+     - `findByEmail(email: string): Promise<User | null>`
+     - `create(data: CreateUserDTO): Promise<User>`
+
+### Tahap 4: Membangun Layer Infrastructure
+*Layer ini menangani komunikasi dengan hal-hal teknis pihak ketiga.*
+1. **Implementasi Repository Pattern (`src/infrastructure/db/user.repository.ts`):**
+   - Buat class `UserRepository` yang *implements* `IUserRepository`.
+   - Panggil instance koneksi database Drizzle di sini untuk menjalankan operasi `SELECT` (berdasarkan *email*) dan `INSERT` (pembuatan user baru).
+2. **Utilitas Bcrypt (`src/infrastructure/bcrypt/index.ts`):**
+   - Buat dan ekspor fungsi untuk melempar password polos (plain) menjadi *hash* `hashPassword(plain: string)`.
+   - Buat fungsi untuk mencocokkan password `comparePassword(plain: string, hash: string)`.
+3. **Utilitas JWT (`src/infrastructure/jwt/index.ts`):**
+   - Buat dan ekspor fungsi untuk menghasilkan *token* `generateToken(payload: any)`. Gunakan *secret key* sederhana atau dari `.env`.
+
+### Tahap 5: Membangun Layer Application (Use Cases)
+*Layer ini merupakan otak dari bisnis proses yang sesungguhnya.*
+1. **Register Service (`src/application/auth/register.service.ts`):**
+   - Buat class `RegisterService` yang menerima instance dari `IUserRepository` (Dependency Injection) melalui *constructor*.
+   - Buat fungsi `execute(data)`.
+   - **Logika:** Panggil *repository* untuk mengecek apakah email ada. Jika ada, lemparkan error `UserAlreadyExistsError`. Jika belum, *hash password* melalui utilitas bcrypt, dan simpan *user* ke *repository*.
+2. **Login Service (`src/application/auth/login.service.ts`):**
+   - Buat class `LoginService` yang menerima instance `IUserRepository`.
+   - Buat fungsi `execute(email, password)`.
+   - **Logika:** Panggil *repository* untuk mencari *user* berdasarkan email. Jika tidak ada, lemparkan error `InvalidCredentialsError`. Jika ada, bandingkan *password* dengan utilitas bcrypt. Jika salah lemparkan error. Jika benar, buat *token* dengan JWT, kembalikan *token* beserta data profil tanpa *password*.
+
+### Tahap 6: Membangun Layer API (Controllers)
+*Layer ini menghubungkan dunia luar (HTTP) ke sistem kita.*
+1. **Register Route (`src/api/v1/auth/register.ts`):**
+   - Terima request HTTP POST dari framework Elysia.
+   - Panggil `RegisterService`.
+   - Tangkap (catch) error yang terjadi dan kembalikan format JSON sesuai spesifikasi (success false). Jika sukses, kembalikan response JSON (success true).
+2. **Login Route (`src/api/v1/auth/login.ts`):**
+   - Lakukan hal serupa seperti di atas, panggil `LoginService` dan kembalikan struktur respons yang diminta pada Poin 2.
+
+### Tahap 7: Wiring di Entry Point (`main.ts`)
+1. Buka `src/main.ts`.
+2. Hapus rute bawaan Elysia yang tidak penting.
+3. Instansiasi `UserRepository`.
+4. Instansiasi `RegisterService` dan `LoginService` dengan meng-*inject* instance `UserRepository` tersebut secara manual ke konstruktor mereka.
+5. Impor rute Elysia dari `api/v1/auth/...` dan daftarkan ke *instance* utama aplikasi.
+6. Jalankan server dan tes API ini menggunakan REST Client atau Postman.
